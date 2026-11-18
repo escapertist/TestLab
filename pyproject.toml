@@ -1,0 +1,25 @@
+[project]
+name = "testlab"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Лидия", email = "lihry.light.64@gmail.com" }
+]
+requires-python = ">=3.15"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "asyncpg>=0.32.0",
+    "fastapi>=0.163.1",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic>=2.14.3",
+    "sqlalchemy[asyncio]>=2.1.8",
+    "uvicorn>=0.54.0",
+]
+
+[project.scripts]
+testlab = "testlab:main"
+
+[build-system]
+requires = ["uv_build>=0.13.8,<0.14.0"]
+build-backend = "uv_build"
