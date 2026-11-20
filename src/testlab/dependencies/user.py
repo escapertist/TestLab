@@ -1,9 +1,8 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from testlab.config.db import get_db
-from testlab.repositories.user import UserRepository
+
+from testlab.database import get_db
 from testlab.services.user import UserService
 
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
-    repo = UserRepository(db)
-    return UserService(repo)
+    return UserService(db)

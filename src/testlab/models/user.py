@@ -4,14 +4,11 @@ import uuid
 from datetime import datetime
 from sqlalchemy import String, DateTime, Enum as SqlEnum
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID
-
-from testlab.config.base import Base
+from testlab.database import Base
 from testlab.schemas.user import UserRole
 
 class User(Base):
     __tablename__ = "users"
-
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
