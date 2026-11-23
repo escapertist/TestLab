@@ -6,6 +6,5 @@ from .db_config import DatabaseConfig
 
 class AppConfig(BaseConfig):
     db: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    # Позже добавим сюда security и llm
 
 settings = AppConfig()

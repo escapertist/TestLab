@@ -3,6 +3,8 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+testlab.db
+
 # C extensions
 *.so
 
@@ -218,3 +220,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local SQLite database
+*.db

@@ -3,9 +3,7 @@ from testlab.repositories.user import UserRepository
 from testlab.exceptions import UserAlreadyExistsError, InvalidCredentialsError
 from testlab.schemas.user import UserRegisterRequest, UserRegisterResponse, UserLoginResponse
 
-# Временно перенесем хеширование сюда (или создадим testlab/security.py)
-from passlib.context import CryptContext
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from testlab.security import get_password_hash, verify_password
 
 class UserService:
     def __init__(self, db):
@@ -18,7 +16,7 @@ class UserService:
         
         new_user = User(
             username=data.username,
-            password_hash=pwd_context.hash(data.password),
+            password_hash=get_password_hash(data.password),
             full_name=data.full_name,
             role=data.role
         )
@@ -29,8 +27,10 @@ class UserService:
         user = await self.repo.get_by_username(username)
         if not user:
             raise InvalidCredentialsError("Неверный логин или пароль")
+
+        if not verify_password(password, user.password_hash):
+            raise InvalidCredentialsError("Неверный логин или пароль")
         
-        # (Проверку пароля добавим позже)
         user_out = UserRegisterResponse.model_validate(user)
         return UserLoginResponse(
             access_token="fake-jwt-token",
