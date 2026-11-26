@@ -44,7 +44,7 @@ erDiagram
         uuid teacher_id FK
         string title
         string status
-        jsonb generation_params
+        json generation_params
         timestamp created_at
     }
 
@@ -54,7 +54,7 @@ erDiagram
         string type
         int order_index
         text text
-        numeric points
+        float points
         string source
         timestamp created_at
     }
