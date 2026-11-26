@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from testlab.models.enums import QuestionSource, QuestionType, TestStatus
+from testlab.models.enums import QuestionType, TestStatus
 from testlab.schemas.common import UtcDatetime
 
 
@@ -17,13 +17,6 @@ class ClosedOptionOut(BaseModel):
     order_index: int
 
 
-class RubricOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    criteria_text: str
-    reference_answer: str
-
-
 class QuestionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -32,9 +25,8 @@ class QuestionOut(BaseModel):
     text: str
     points: float
     order_index: int
-    source: QuestionSource
+    reference_answer: str | None = None
     options: list[ClosedOptionOut] = Field(default_factory=list)
-    rubric: RubricOut | None = None
 
 
 class TestOut(BaseModel):

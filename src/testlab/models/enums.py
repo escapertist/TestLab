@@ -17,8 +17,3 @@ class TestStatus(StrEnum):
 class QuestionType(StrEnum):
     open = "open"
     closed = "closed"
-
-
-class QuestionSource(StrEnum):
-    llm = "llm"
-    manual = "manual"

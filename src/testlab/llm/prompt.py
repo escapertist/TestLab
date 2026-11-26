@@ -1,36 +1,32 @@
-"""Промпт для модели: системная инструкция, пример JSON и текст запроса."""
+"""Промпты для модели: системная инструкция и запросы по ролям."""
 
 SYSTEM_PROMPT = (
-    "Ты методист, который составляет тесты по учебным материалам. "
-    "Отвечай только JSON, без markdown-разметки и пояснений."
-)
-
-JSON_EXAMPLE = (
-    '{"title": "Название теста", "questions": ['
-    '{"type": "closed", "text": "Вопрос", "points": 1, '
-    '"options": [{"text": "Вариант A", "is_correct": true}, '
-    '{"text": "Вариант B", "is_correct": false}, {"text": "Вариант C", "is_correct": false}], '
-    '"rubric": null}, '
-    '{"type": "open", "text": "Вопрос", "points": 3, "options": null, '
-    '"rubric": {"criteria_text": "Что должно быть в ответе", "reference_answer": "Эталонный ответ"}}'
-    "]}"
+    "Ты методист, который составляет и проверяет тесты по учебным материалам. "
+    "Отвечай на русском языке и опирайся только на переданный текст."
 )
 
 
-def build_user_prompt(text: str, closed_count: int, open_count: int) -> str:
+def build_generation_prompt(text: str, closed_count: int, open_count: int, options_count: int) -> str:
     return "\n".join(
         [
-            "Составь тест по тексту ниже.",
-            "Верни строго JSON такого вида:",
-            JSON_EXAMPLE,
-            (
-                f"Нужно ровно {closed_count} закрытых вопросов (три варианта, один правильный) "
-                f"и {open_count} открытых (с критериями и эталонным ответом)."
-            ),
-            'Поле "points" — целое число от 1 до 5, по сложности вопроса.',
+            "Составь тест по тексту материала ниже.",
+            f"Закрытых вопросов: {closed_count}, у каждого ровно {options_count} варианта и ровно один верный.",
+            f"Открытых вопросов: {open_count}, у каждого эталонный ответ.",
             "Текст материала:",
             "---",
             text,
             "---",
+        ]
+    )
+
+
+def build_check_prompt(question: str, correct_answer: str, user_answer: str) -> str:
+    return "\n".join(
+        [
+            "Проверь, верен ли ответ учащегося на вопрос.",
+            "Сравни его по смыслу с эталонным ответом; пустой ответ считай неверным.",
+            f"Вопрос: {question}",
+            f"Эталонный ответ: {correct_answer}",
+            f"Ответ учащегося: {user_answer}",
         ]
     )

@@ -13,11 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 import testlab.models  # noqa: F401 — регистрирует модели в Base.metadata
 from testlab.__main__ import create_app
 from testlab.database import Base, create_engine, get_db
-from testlab.dependencies.material import get_file_storage, get_llm_client
+from testlab.dependencies.llm import get_check_client, get_generation_client
+from testlab.dependencies.material import get_file_storage
 from testlab.dependencies.uow import get_uow
 from testlab.infrastructure.storage import LocalFileStorage
 from testlab.repositories.uow import UnitOfWork
-from tests.helpers import FakeLLM, register
+from tests.helpers import FakeChecker, FakeLLM, register
 
 TEST_TMP_ROOT = Path(__file__).resolve().parents[1] / ".test-tmp"
 
@@ -59,6 +60,11 @@ def fake_llm() -> FakeLLM:
 
 
 @pytest.fixture
+def fake_checker() -> FakeChecker:
+    return FakeChecker()
+
+
+@pytest.fixture
 def uploads_dir(tmp_path: Path) -> Path:
     return tmp_path / "uploads"
 
@@ -69,7 +75,7 @@ def storage(uploads_dir: Path) -> LocalFileStorage:
 
 
 @pytest.fixture
-def app(session_maker, fake_llm, storage):
+def app(session_maker, fake_llm, fake_checker, storage):
     application = create_app()
 
     async def override_get_db() -> AsyncIterator[AsyncSession]:
@@ -82,7 +88,8 @@ def app(session_maker, fake_llm, storage):
     application.dependency_overrides[get_db] = override_get_db
     application.dependency_overrides[get_uow] = override_get_uow
     application.dependency_overrides[get_file_storage] = lambda: storage
-    application.dependency_overrides[get_llm_client] = lambda: fake_llm
+    application.dependency_overrides[get_generation_client] = lambda: fake_llm
+    application.dependency_overrides[get_check_client] = lambda: fake_checker
     return application
 
 

@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 
 from testlab.models.enums import QuestionType
 from testlab.models.material import Material
-from testlab.models.test import ClosedQuestionOption, OpenQuestionRubric, Question
+from testlab.models.test import ClosedQuestionOption, Question
 from testlab.models.test import Test as OrmTest
 from testlab.models.user import User
 from testlab.repositories.uow import UnitOfWork
@@ -36,7 +36,7 @@ async def test_delete_material_cascades(session_maker):
                     order_index=2,
                     text="Открытый",
                     points=2,
-                    rubric=OpenQuestionRubric(criteria_text="c", reference_answer="r"),
+                    reference_answer="r",
                 ),
             ],
         )
@@ -52,7 +52,6 @@ async def test_delete_material_cascades(session_maker):
         assert await count(session, OrmTest) == 0
         assert await count(session, Question) == 0
         assert await count(session, ClosedQuestionOption) == 0
-        assert await count(session, OpenQuestionRubric) == 0
 
 
 async def test_questions_keep_order(session_maker):
@@ -77,4 +76,4 @@ async def test_questions_keep_order(session_maker):
 
     assert test is not None
     assert [question.order_index for question in test.questions] == [1, 2]
-
+

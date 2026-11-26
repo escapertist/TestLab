@@ -12,6 +12,7 @@ dependencies = [
     "asyncpg>=0.32.0",
     "fastapi>=0.163.1",
     "httpx>=0.28.1",
+    "langchain-gigachat>=0.5.1",
     "pwdlib[argon2]>=0.4.2",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.3",

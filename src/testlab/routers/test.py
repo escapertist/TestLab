@@ -21,9 +21,13 @@ async def create_test(
     user: CurrentTeacher,
     payload: TestCreateRequest | None = None,
 ) -> TestOut:
+    request = payload if payload is not None else TestCreateRequest()
     test = await service.generate_for_material(
-        teacher_id=user.id,
-        material_id=str(material_id),
-        title=payload.title if payload is not None else None,
+        user.id,
+        str(material_id),
+        request.title,
+        closed_count=request.closed_count,
+        open_count=request.open_count,
+        options_count=request.options_count,
     )
     return TestOut.model_validate(test)

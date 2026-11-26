@@ -4,19 +4,15 @@ from testlab.config.app_config import settings
 from testlab.errors import ConflictError, NotFoundError, PersistenceError
 from testlab.infrastructure.pdf import extract_text
 from testlab.infrastructure.storage import FileStorage
-from testlab.llm.client import GigaChatClient
-from testlab.llm.generation import GeneratedQuestion, GeneratedTest
-from testlab.models.enums import QuestionSource, QuestionType
-from testlab.models.test import ClosedQuestionOption, OpenQuestionRubric, Question, Test
+from testlab.llm.client import TestGenerator
+from testlab.llm.output import Question as OutputQuestion
+from testlab.models.enums import QuestionType
+from testlab.models.test import ClosedQuestionOption, Question, Test
 from testlab.repositories.uow import UnitOfWork
-
-CLOSED_QUESTIONS = 5
-OPEN_QUESTIONS = 2
-MEGABYTE = 1024 * 1024
 
 
 class TestService:
-    def __init__(self, uow: UnitOfWork, storage: FileStorage, llm: GigaChatClient) -> None:
+    def __init__(self, uow: UnitOfWork, storage: FileStorage, llm: TestGenerator) -> None:
         self.uow = uow
         self.storage = storage
         self.llm = llm
@@ -26,6 +22,10 @@ class TestService:
         teacher_id: str,
         material_id: str,
         title: str | None = None,
+        *,
+        closed_count: int,
+        open_count: int,
+        options_count: int,
     ) -> Test:
         material = await self.uow.materials.get_by_id_and_teacher(material_id, teacher_id)
         if material is None:
@@ -37,8 +37,9 @@ class TestService:
         text = extract_text(content)
         generated = await self.llm.generate_test(
             text,
-            closed_count=CLOSED_QUESTIONS,
-            open_count=OPEN_QUESTIONS,
+            closed_count=closed_count,
+            open_count=open_count,
+            options_count=options_count,
         )
 
         try:
@@ -47,7 +48,7 @@ class TestService:
                     material_id=material.id,
                     teacher_id=teacher_id,
                     title=title or generated.title,
-                    generation_params=self._generation_params(generated, text),
+                    generation_params=self._generation_params(text, closed_count, open_count, options_count),
                 ),
                 self._build_questions(generated.questions),
             )
@@ -58,15 +59,13 @@ class TestService:
         return test
 
     @staticmethod
-    def _build_questions(questions: tuple[GeneratedQuestion, ...]) -> list[Question]:
+    def _build_questions(questions: list[OutputQuestion]) -> list[Question]:
         built: list[Question] = []
         for index, item in enumerate(questions, start=1):
             question = Question(
                 type=item.type,
                 order_index=index,
                 text=item.text,
-                points=item.points,
-                source=QuestionSource.llm,
             )
             # Обе связи выставляются явно: иначе сериализация ответа потянет
             # ленивую загрузку уже после коммита.
@@ -77,25 +76,23 @@ class TestService:
                         is_correct=option.is_correct,
                         order_index=option_index,
                     )
-                    for option_index, option in enumerate(item.options, start=1)
+                    for option_index, option in enumerate(item.options or [], start=1)
                 ]
-                question.rubric = None
+                question.reference_answer = None
             else:
                 question.options = []
-                question.rubric = OpenQuestionRubric(
-                    criteria_text=item.rubric.criteria_text,
-                    reference_answer=item.rubric.reference_answer,
-                ) if item.rubric is not None else None
+                question.reference_answer = item.reference_answer
             built.append(question)
         return built
 
     @staticmethod
-    def _generation_params(generated: GeneratedTest, text: str) -> dict:
+    def _generation_params(text: str, closed_count: int, open_count: int, options_count: int) -> dict:
         sent_chars = min(len(text), settings.llm.max_input_chars)
         return {
-            "model": settings.llm.model,
-            "closed_count": generated.closed_count,
-            "open_count": generated.open_count,
+            "model": settings.llm.generation_model,
+            "closed_count": closed_count,
+            "open_count": open_count,
+            "options_count": options_count,
             "text_chars": sent_chars,
             "text_truncated": len(text) > sent_chars,
         }

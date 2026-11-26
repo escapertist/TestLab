@@ -10,7 +10,6 @@ erDiagram
 
     tests ||--o{ questions : "test_id"
     questions ||--o{ closed_question_options : "question_id"
-    questions ||--|| open_question_rubrics : "question_id"
 
     tests ||--o{ assignments : "test_id"
     assignments ||--o{ results : "assignment_id"
@@ -55,7 +54,7 @@ erDiagram
         int order_index
         text text
         float points
-        string source
+        text reference_answer
         timestamp created_at
     }
 
@@ -65,13 +64,6 @@ erDiagram
         text text
         bool is_correct
         int order_index
-    }
-
-    open_question_rubrics {
-        uuid id PK
-        uuid question_id FK
-        text criteria_text
-        text reference_answer
     }
 
     assignments {

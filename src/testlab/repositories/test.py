@@ -37,7 +37,4 @@ class TestRepository:
 
 
 def _with_questions():
-    return (
-        selectinload(Test.questions).selectinload(Question.options),
-        selectinload(Test.questions).selectinload(Question.rubric),
-    )
+    return (selectinload(Test.questions).selectinload(Question.options),)
