@@ -9,6 +9,7 @@ from fastapi import FastAPI
 import testlab.models  # noqa: F401 — регистрирует модели в Base.metadata
 from testlab.database import async_engine, init_db
 from testlab.errors import register_exception_handlers
+from testlab.routers.answers import router as answers_router
 from testlab.routers.material import router as material_router
 from testlab.routers.test import router as test_router
 from testlab.routers.user import router as user_router
@@ -27,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(user_router)
     app.include_router(material_router)
     app.include_router(test_router)
+    app.include_router(answers_router)
     return app
 
 

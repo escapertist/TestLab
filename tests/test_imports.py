@@ -16,8 +16,17 @@ FORBIDDEN: dict[str, set[str]] = {
         "testlab.database",
         "testlab.infrastructure",
         "testlab.llm",
+        "langchain_core",
+        "langchain_gigachat",
     },
-    "services": {"fastapi", "starlette", "sqlalchemy", "httpx"},
+    "services": {
+        "fastapi",
+        "starlette",
+        "sqlalchemy",
+        "httpx",
+        "langchain_core",
+        "langchain_gigachat",
+    },
     "repositories": {"testlab.services", "testlab.infrastructure", "testlab.llm"},
     "llm": {
         "testlab.services",

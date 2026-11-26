@@ -61,7 +61,7 @@ CREATE TABLE questions (
     order_index  INTEGER     NOT NULL,
     text         TEXT        NOT NULL,
     points       FLOAT       NOT NULL DEFAULT 1,
-    source       VARCHAR(20) NOT NULL DEFAULT 'manual',
+    reference_answer TEXT     NULL,
     created_at   DATETIME    NOT NULL
 );
 
@@ -79,16 +79,6 @@ CREATE TABLE closed_question_options (
 );
 
 CREATE INDEX ix_closed_question_options_question_id ON closed_question_options (question_id);
-
--- =========================================================
--- open_question_rubrics  (1:1 к открытому вопросу)
--- =========================================================
-CREATE TABLE open_question_rubrics (
-    id                VARCHAR(36) PRIMARY KEY,
-    question_id       VARCHAR(36) NOT NULL UNIQUE REFERENCES questions(id) ON DELETE CASCADE,
-    criteria_text     TEXT        NOT NULL,
-    reference_answer  TEXT        NOT NULL
-);
 
 -- Таблицы assignments, results и answers пока не реализованы:
 -- они описаны только в docs/er.md как план следующих этапов.

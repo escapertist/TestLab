@@ -1,6 +1,5 @@
 """Вспомогательные функции и тестовые двойники."""
 
-import json
 from collections.abc import Iterator
 from io import BytesIO
 
@@ -8,7 +7,8 @@ import httpx
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
-from testlab.llm.generation import GeneratedTest, parse_generated_test
+from testlab.llm.output import Option, Question, Test
+from testlab.models.enums import QuestionType
 
 PASSWORD = "secret123"
 
@@ -43,47 +43,65 @@ def build_blank_pdf() -> bytes:
     return buffer.getvalue()
 
 
-def build_llm_response(title: str = "Тест по материалу", closed: int = 5, open_: int = 2) -> str:
-    questions: list[dict] = []
+def build_generated_test(
+    title: str = "Тест по материалу",
+    closed: int = 5,
+    open_: int = 2,
+    options_count: int = 2,
+) -> Test:
+    questions: list[Question] = []
     for index in range(closed):
-        questions.append(
-            {
-                "type": "closed",
-                "text": f"Закрытый вопрос {index + 1}",
-                "points": 1,
-                "options": [
-                    {"text": "Верный вариант", "is_correct": True},
-                    {"text": "Неверный вариант", "is_correct": False},
-                ],
-                "rubric": None,
-            }
-        )
+        options = [Option(text="Верный вариант", is_correct=True)]
+        for option_index in range(1, options_count):
+            options.append(Option(text=f"Неверный вариант {option_index}", is_correct=False))
+        questions.append(Question(type=QuestionType.closed, text=f"Закрытый вопрос {index + 1}", options=options))
     for index in range(open_):
         questions.append(
-            {
-                "type": "open",
-                "text": f"Открытый вопрос {index + 1}",
-                "points": 3,
-                "options": None,
-                "rubric": {"criteria_text": "Критерии", "reference_answer": "Эталон"},
-            }
+            Question(
+                type=QuestionType.open,
+                text=f"Открытый вопрос {index + 1}",
+                reference_answer="Эталон",
+            )
         )
-    return json.dumps({"title": title, "questions": questions}, ensure_ascii=False)
+    return Test(title=title, questions=questions)
 
 
 class FakeLLM:
-    """Подменяет GigaChatClient в сервисах и в DI."""
+    """Подменяет TestGenerator в сервисах и в DI."""
 
-    def __init__(self, raw: str | None = None, error: Exception | None = None) -> None:
-        self.raw = raw if raw is not None else build_llm_response()
+    def __init__(self, error: Exception | None = None) -> None:
         self.error = error
         self.calls: list[str] = []
+        self.counts: list[tuple[int, int, int]] = []
 
-    async def generate_test(self, text: str, closed_count: int = 5, open_count: int = 2) -> GeneratedTest:
+    async def generate_test(
+        self,
+        text: str,
+        *,
+        closed_count: int,
+        open_count: int,
+        options_count: int,
+    ) -> Test:
         self.calls.append(text)
+        self.counts.append((closed_count, open_count, options_count))
         if self.error is not None:
             raise self.error
-        return parse_generated_test(self.raw)
+        return build_generated_test(closed=closed_count, open_=open_count, options_count=options_count)
+
+
+class FakeChecker:
+    """Подменяет AnswerChecker в сервисах и в DI."""
+
+    def __init__(self, verdict: bool = True, error: Exception | None = None) -> None:
+        self.verdict = verdict
+        self.error = error
+        self.calls: list[tuple[str, str, str]] = []
+
+    async def check_answer(self, question: str, correct_answer: str, user_answer: str) -> bool:
+        self.calls.append((question, correct_answer, user_answer))
+        if self.error is not None:
+            raise self.error
+        return self.verdict
 
 
 async def register(client: httpx.AsyncClient, username: str, role: str = "teacher") -> dict:
@@ -138,6 +156,10 @@ async def create_test(
     headers: dict[str, str],
     material_id: str,
     title: str | None = None,
+    **fields,
 ) -> httpx.Response:
-    kwargs = {"json": {"title": title}} if title is not None else {}
+    body: dict = dict(fields)
+    if title is not None:
+        body["title"] = title
+    kwargs = {"json": body} if body else {}
     return await client.post(f"/materials/{material_id}/tests", headers=headers, **kwargs)

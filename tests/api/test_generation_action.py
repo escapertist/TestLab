@@ -32,14 +32,51 @@ async def test_creates_test_for_material(client, teacher):
     body = response.json()
     assert body["status"] == "draft"
     assert len(body["questions"]) == 7
-    assert len(body["questions"][0]["options"]) == 2
-    assert body["questions"][0]["source"] == "llm"
-    assert body["questions"][-1]["rubric"]["criteria_text"] == "Критерии"
+    assert len(body["questions"][0]["options"]) == 4
+    assert body["questions"][-1]["reference_answer"] == "Эталон"
     assert body["generation_params"]["closed_count"] == 5
     assert body["generation_params"]["open_count"] == 2
+    assert body["generation_params"]["options_count"] == 4
 
     after = await client.get(f"/materials/{material_id}", headers=teacher["headers"])
     assert after.json()["test"]["id"] == body["id"]
+
+
+async def test_custom_composition(client, teacher):
+    material_id = await upload(client, teacher)
+
+    response = await create_test(
+        client,
+        teacher["headers"],
+        material_id,
+        closed_count=3,
+        open_count=1,
+        options_count=3,
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert len(body["questions"]) == 4
+    assert len(body["questions"][0]["options"]) == 3
+    assert body["generation_params"]["closed_count"] == 3
+    assert body["generation_params"]["open_count"] == 1
+    assert body["generation_params"]["options_count"] == 3
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        {"closed_count": 15, "open_count": 10},
+        {"closed_count": 0, "open_count": 0},
+        {"options_count": 1},
+    ],
+)
+async def test_invalid_composition(client, teacher, fields):
+    material_id = await upload(client, teacher)
+
+    response = await create_test(client, teacher["headers"], material_id, **fields)
+
+    assert response.status_code == 422
 
 
 async def test_title_from_body(client, teacher):
