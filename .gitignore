@@ -223,3 +223,12 @@ __marimo__/
 
 # Local SQLite database
 *.db
+
+# Загруженные PDF
+uploads/
+
+# Временные каталоги прогонов тестов и uv
+.test-tmp/
+.pytest-tmp*/
+pytest-cache-files-*/
+.uv-cache/

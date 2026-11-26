@@ -1,7 +1,7 @@
 [project]
 name = "testlab"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI-сервис генерации тестов по учебным материалам"
 readme = "README.md"
 authors = [
     { name = "Лидия", email = "lihry.light.64@gmail.com" }
@@ -11,17 +11,43 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "asyncpg>=0.32.0",
     "fastapi>=0.163.1",
+    "httpx>=0.28.1",
     "pwdlib[argon2]>=0.4.2",
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.3",
+    "pypdf>=6.1.1",
+    "python-multipart>=0.0.20",
     "ruff>=0.17.5",
     "sqlalchemy[asyncio]>=2.1.8",
     "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
-testlab = "testlab:main"
+testlab = "testlab.__main__:main"
+testlab-init-db = "testlab.init_db:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.13.8,<0.14.0"]
 build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+# ORM-модели и сервисы называются Test*/TestService — их не надо собирать как тесты.
+python_classes = []
+
+[tool.ruff]
+line-length = 120
+exclude = [".test-tmp", ".pytest-tmp*", "pytest-cache-files-*", ".uv-cache"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
+# B008: Depends(...) в значении по умолчанию — штатный приём FastAPI
+ignore = ["B008"]
